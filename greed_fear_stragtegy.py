@@ -1,3 +1,19 @@
+import subprocess
+import sys
+
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# 安装所需依赖
+install('matplotlib')
+install('pandas')
+install('numpy')
+install('streamlit')
+install('requests')
+install('scipy')
+install('time')
+install('seaborn')
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
