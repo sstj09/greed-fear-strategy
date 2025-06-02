@@ -4,7 +4,7 @@ setup(
     name='greed-fear-strategy',
     version='0.1',
     install_requires=[
-        'matplotlib>=3.7',
+        'matplotlib>=3.5.0',
         'pandas>=2.0',
         'numpy>=1.24',
         'requests==2.31.0',
