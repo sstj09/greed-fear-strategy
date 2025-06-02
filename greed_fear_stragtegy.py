@@ -28,19 +28,19 @@ def load_data():
 
         df['greed_level'] = pd.cut(df['greed'], 
                                    bins=[0, 24, 49, 74, 100],
-                                   labels=['极度恐惧', '恐惧', '贪婪', '极度贪婪'])
+                                   labels=['Extreme Fear', 'Fear', 'Greed', 'Extreme Greed'])
         return df
     except Exception as e:
-        st.error(f"❌ 数据加载失败：{e}")
+        st.error(f"❌ Data loading failed: {e}")
         return pd.DataFrame()
 
 # 加载数据
 df = load_data()
 
 if df.empty:
-    st.warning("⚠️ 数据为空，请确认上传的数据文件是否完整。")
+    st.warning("⚠️ Data is empty. Please check if the uploaded files are complete.")
 else:
-    st.success(f"✅ 数据加载成功，共 {len(df)} 条记录，时间范围：{df['date'].min().date()} - {df['date'].max().date()}")
+    st.success(f"✅ Data loaded successfully. Total {len(df)} records from {df['date'].min().date()} to {df['date'].max().date()}")
 
     # 显示数据样本
     with st.expander("📄 展示数据样本"):
@@ -49,7 +49,7 @@ else:
     # 折线图：贪婪恐惧指数 & 比特币价格
     st.subheader("📈 贪婪恐惧指数与比特币价格走势")
 
-    colors = {'极度恐惧': '#1a5e1a', '恐惧': '#2e8b57', '贪婪': '#ffa500', '极度贪婪': '#ff4500'}
+    colors = {'Extreme Fear': '#1a5e1a', 'Fear': '#2e8b57', 'Greed': '#ffa500', 'Extreme Greed': '#ff4500'}
 
     fig, ax1 = plt.subplots(figsize=(14, 6))
     ax2 = ax1.twinx()
@@ -60,9 +60,9 @@ else:
 
     ax2.plot(df['date'], df['price'], 'b-', linewidth=1.2, alpha=0.7, label='BTC价格')
 
-    ax1.set_ylabel("贪婪恐惧指数", fontsize=12)
-    ax2.set_ylabel("比特币价格", fontsize=12)
-    ax1.set_xlabel("日期", fontsize=12)
+    ax1.set_ylabel("Fear and Greed Index", fontsize=12)
+    ax2.set_ylabel("Bitcoin Price", fontsize=12)
+    ax1.set_xlabel("Date", fontsize=12)
 
     fig.legend(loc='upper left', bbox_to_anchor=(0.1, 0.9))
     fig.tight_layout()
@@ -73,11 +73,11 @@ else:
     st.subheader("🔍 贪婪恐惧指数与比特币价格的相关性")
 
     corr = df['greed'].corr(df['price'])
-    st.markdown(f"**相关系数（皮尔森）为： `{corr:.4f}`**")
+    st.markdown(f"**Pearson correlation coefficient: `{corr:.4f}`**")
     
     fig2, ax = plt.subplots()
     sns.regplot(x='greed', y='price', data=df, ax=ax, scatter_kws={'alpha':0.5})
-    ax.set_title("贪婪恐惧指数 vs 比特币价格")
+    ax.set_title("Fear and Greed Index vs Bitcoin Price")
     st.pyplot(fig2)
 
     # 动态过滤器
@@ -90,7 +90,7 @@ else:
         st.write(f"筛选后数据量：{len(filtered_df)}")
 
         fig3, ax = plt.subplots(figsize=(12, 5))
-        ax.plot(filtered_df['date'], filtered_df['price'], label="BTC 价格", color='blue')
-        ax.set_ylabel("价格")
-        ax.set_title("比特币价格走势（筛选）")
+        ax.plot(filtered_df['date'], filtered_df['price'], label="BTC Price", color='blue')
+        ax.set_ylabel("Price")
+        ax.set_title("Bitcoin Price Trend (Filtered)")
         st.pyplot(fig3)
