@@ -11,7 +11,6 @@ install('numpy')
 install('streamlit')
 install('requests')
 install('scipy')
-install('time')
 install('seaborn')
 
 import pandas as pd
