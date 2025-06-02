@@ -12,6 +12,7 @@ install('streamlit')
 install('requests')
 install('scipy')
 install('seaborn')
+install ('openpyxl')
 
 import pandas as pd
 import numpy as np
