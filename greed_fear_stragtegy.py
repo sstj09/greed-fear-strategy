@@ -70,7 +70,7 @@ def fetch_crypto_data():
 
 # . 可视化分析
 df = fetch_crypto_data()
-print(f"获取到{len(df)}条数据，时间范围: {df['date'].min().date()} 至 {df['date'].max().date()}")
+# #print(f"获取到{len(df)}条数据，时间范围: {df['date'].min().date()} 至 {df['date'].max().date()}")
 
 plt.figure(figsize=(14, 10))
 
