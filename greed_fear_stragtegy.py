@@ -27,7 +27,8 @@ import matplotlib.gridspec as gridspec
 from matplotlib.ticker import FuncFormatter
 
 # 设置全局样式
-plt.style.use('seaborn-whitegrid')
+import seaborn as sns
+sns.set_style("whitegrid")
 sns.set_palette("Set2")
 pd.set_option('display.float_format', '{:.2f}'.format)
 
