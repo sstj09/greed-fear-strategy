@@ -95,6 +95,9 @@ else:
         ax.set_title("Bitcoin Price Trend (Filtered)")
         st.pyplot(fig3)
         
+import requests  # 放在文件顶部导入
+
+# 👇你原来的表单
 st.subheader("📝 用户调研问卷（可选）")
 
 with st.form("user_survey_form"):
@@ -112,6 +115,37 @@ with st.form("user_survey_form"):
 
     if submit:
         st.success("✅ 感谢您的反馈，我们会认真参考！")
-        # 你也可以把这些信息保存到本地文件或数据库中（如 CSV 文件），如下所示：
+
+        # ✅ 写入本地 CSV（可选）
         with open("user_feedback.csv", "a", encoding="utf-8") as f:
             f.write(f"{datetime.now()},{experience},{insight},{expected_feature}\n")
+
+        # ✅ 写入 Notion 数据库
+        notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
+        database_id = "2080ef8679418083b27dc87bafe18873"
+
+        headers = {
+            "Authorization": f"Bearer {notion_token}",
+            "Content-Type": "application/json",
+            "Notion-Version": "2022-06-28"
+        }
+
+        notion_payload = {
+            "parent": {"database_id": database_id},
+            "properties": {
+                "提交时间": {"date": {"start": datetime.now().isoformat()}},
+                "理解度": {"select": {"name": experience}},
+                "帮助程度": {"select": {"name": insight}},
+                "建议功能": {"rich_text": [{"text": {"content": expected_feature}}]}
+            }
+        }
+
+        response = requests.post(
+            "https://api.notion.com/v1/pages",
+            headers=headers,
+            json=notion_payload
+        )
+
+        if response.status_code != 200:
+            st.error("❌ Notion 写入失败，请检查 token 和数据库权限")
+            st.json(response.json())
