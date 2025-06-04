@@ -63,7 +63,7 @@ with st.form("user_survey_form"):
             
         # 写入 Notion 数据库
         notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
-        database_id = "2080ef86-7941-80d3-9a68-000cf75416b3"
+        database_id = "2080ef8679418083b27dc87bafe18873"
 
         headers = {
             "Authorization": f"Bearer {notion_token}",
