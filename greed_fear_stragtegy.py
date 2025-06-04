@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import requests  # 确保导入 requests 库
 
 st.set_page_config(page_title="贪婪恐惧与比特币分析", layout="wide")
 st.title("📊 贪婪恐惧指数与比特币价格关系分析")
@@ -37,6 +38,86 @@ def load_data():
 # 加载数据
 df = load_data()
 
+# ============================= 用户调研问卷 =============================
+st.subheader("📝 用户调研问卷")
+
+with st.form("user_survey_form"):
+    st.markdown("我们希望了解您的使用感受，以下问题完全匿名，仅用于改进产品体验。")
+
+    experience = st.radio("您对本页面展示的数据和分析是否易于理解？", 
+                          ["非常易懂", "基本理解", "有些难", "不太理解"], index=0)
+
+    insight = st.radio("这些数据对您了解比特币市场有帮助吗？", 
+                       ["非常有帮助", "一般", "帮助不大", "没有帮助"], index=0)
+
+    expected_feature = st.text_input("您希望我们未来加入哪些功能？（如：价格预测、新闻热度分析等）",
+                                    placeholder="请分享您的想法...")
+
+    submit = st.form_submit_button("提交反馈")
+
+    if submit:
+        # 确保所有必填字段已填写
+        if not experience or not insight:
+            st.error("请回答所有必填问题")
+            st.stop()
+            
+        # 写入 Notion 数据库
+        notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
+        database_id = "2080ef86-7941-80d3-9a68-000cf75416b3"
+
+        headers = {
+            "Authorization": f"Bearer {notion_token}",
+            "Content-Type": "application/json",
+            "Notion-Version": "2022-06-28"
+        }
+        
+        # 检查数据库ID格式是否正确
+        if len(database_id) != 36 or database_id.count("-") != 4:
+            st.error("数据库ID格式不正确，请检查")
+            st.stop()
+
+        # 准备Notion API请求数据
+        notion_payload = {
+            "parent": {"database_id": database_id},
+            "properties": {
+                "提交时间": {
+                    "date": {"start": datetime.utcnow().isoformat() + "Z"}
+                },
+                "理解度": {
+                    "select": {"name": experience}
+                },
+                "帮助程度": {
+                    "select": {"name": insight}
+                },
+                "建议功能": {
+                    "rich_text": [{
+                        "type": "text",
+                        "text": {"content": expected_feature or "无"}
+                    }]
+                }
+            }
+        }
+
+        try:
+            response = requests.post(
+                "https://api.notion.com/v1/pages",
+                headers=headers,
+                json=notion_payload
+            )
+
+            if response.status_code == 200:
+                st.success("✅ 感谢您的反馈，我们会认真参考！")
+            elif response.status_code == 404:
+                st.error("❌ Notion 数据库未找到，请检查数据库ID和集成权限")
+                st.json(response.json())
+            else:
+                st.error(f"❌ Notion 写入失败 (状态码: {response.status_code})")
+                st.json(response.json())
+                
+        except Exception as e:
+            st.error(f"❌ 连接Notion时出错: {str(e)}")
+
+# ============================= 主内容区域 =============================
 if df.empty:
     st.warning("⚠️ Data is empty. Please check if the uploaded files are complete.")
 else:
@@ -94,58 +175,3 @@ else:
         ax.set_ylabel("Price")
         ax.set_title("Bitcoin Price Trend (Filtered)")
         st.pyplot(fig3)
-        
-import requests  # 放在文件顶部导入
-
-# 👇你原来的表单
-st.subheader("📝 用户调研问卷")
-
-with st.form("user_survey_form"):
-    st.markdown("我们希望了解您的使用感受，以下问题完全匿名，仅用于改进产品体验。")
-
-    experience = st.radio("您对本页面展示的数据和分析是否易于理解？", 
-                          ["非常易懂", "基本理解", "有些难", "不太理解"])
-
-    insight = st.radio("这些数据对您了解比特币市场有帮助吗？", 
-                       ["非常有帮助", "一般", "帮助不大", "没有帮助"])
-
-    expected_feature = st.text_input("您希望我们未来加入哪些功能？（如：价格预测、新闻热度分析等）")
-
-    submit = st.form_submit_button("提交反馈")
-
-    if submit:
-        st.success("✅ 感谢您的反馈，我们会认真参考！")
-
-        # # ✅ 写入本地 CSV（可选）
-        # with open("user_feedback.csv", "a", encoding="utf-8") as f:
-        #     f.write(f"{datetime.now()},{experience},{insight},{expected_feature}\n")
-
-        # ✅ 写入 Notion 数据库
-        notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
-        database_id = "2080ef86-7941-80d3-9a68-000cf75416b3"
-
-        headers = {
-            "Authorization": f"Bearer {notion_token}",
-            "Content-Type": "application/json",
-            "Notion-Version": "2022-06-28"
-        }
-
-        notion_payload = {
-            "parent": {"database_id": database_id},
-            "properties": {
-                "提交时间": {"date": {"start": datetime.now().isoformat()}},
-                "理解度": {"select": {"name": experience}},
-                "帮助程度": {"select": {"name": insight}},
-                "建议功能": {"rich_text": [{"text": {"content": expected_feature}}]}
-            }
-        }
-
-        response = requests.post(
-            "https://api.notion.com/v1/pages",
-            headers=headers,
-            json=notion_payload
-        )
-
-        if response.status_code != 200:
-            st.error("❌ Notion 写入失败，请检查 token 和数据库权限")
-            st.json(response.json())
