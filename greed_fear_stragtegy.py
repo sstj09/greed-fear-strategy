@@ -58,7 +58,7 @@ else:
         ax1.plot(group['date'], group['greed'], 'o',
                  color=colors[level], alpha=0.6, label=str(level), markersize=4)
 
-    ax2.plot(df['date'], df['price'], 'b-', linewidth=1.2, alpha=0.7, label='BTC价格')
+    ax2.plot(df['date'], df['price'], 'b-', linewidth=1.2, alpha=0.7, label='BTC_price')
 
     ax1.set_ylabel("Fear and Greed Index", fontsize=12)
     ax2.set_ylabel("Bitcoin Price", fontsize=12)
@@ -94,3 +94,24 @@ else:
         ax.set_ylabel("Price")
         ax.set_title("Bitcoin Price Trend (Filtered)")
         st.pyplot(fig3)
+        
+st.subheader("📝 用户调研问卷（可选）")
+
+with st.form("user_survey_form"):
+    st.markdown("我们希望了解您的使用感受，以下问题完全匿名，仅用于改进产品体验。")
+
+    experience = st.radio("您对本页面展示的数据和分析是否易于理解？", 
+                          ["非常易懂", "基本理解", "有些难", "不太理解"])
+
+    insight = st.radio("这些数据对您了解比特币市场有帮助吗？", 
+                       ["非常有帮助", "一般", "帮助不大", "没有帮助"])
+
+    expected_feature = st.text_input("您希望我们未来加入哪些功能？（如：价格预测、新闻热度分析等）")
+
+    submit = st.form_submit_button("提交反馈")
+
+    if submit:
+        st.success("✅ 感谢您的反馈，我们会认真参考！")
+        # 你也可以把这些信息保存到本地文件或数据库中（如 CSV 文件），如下所示：
+        with open("user_feedback.csv", "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now()},{experience},{insight},{expected_feature}\n")
