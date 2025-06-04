@@ -98,7 +98,7 @@ else:
 import requests  # 放在文件顶部导入
 
 # 👇你原来的表单
-st.subheader("📝 用户调研问卷（可选）")
+st.subheader("📝 用户调研问卷")
 
 with st.form("user_survey_form"):
     st.markdown("我们希望了解您的使用感受，以下问题完全匿名，仅用于改进产品体验。")
@@ -116,9 +116,9 @@ with st.form("user_survey_form"):
     if submit:
         st.success("✅ 感谢您的反馈，我们会认真参考！")
 
-        # ✅ 写入本地 CSV（可选）
-        with open("user_feedback.csv", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now()},{experience},{insight},{expected_feature}\n")
+        # # ✅ 写入本地 CSV（可选）
+        # with open("user_feedback.csv", "a", encoding="utf-8") as f:
+        #     f.write(f"{datetime.now()},{experience},{insight},{expected_feature}\n")
 
         # ✅ 写入 Notion 数据库
         notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
