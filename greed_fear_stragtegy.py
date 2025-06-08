@@ -95,7 +95,7 @@ else:
         ax.set_title("Bitcoin Price Trend (Filtered)")
         st.pyplot(fig3)
         
-import requests  # 放在文件顶部导入
+import requests  
 
 # 👇你原来的表单
 st.subheader("📝 用户调研问卷")
@@ -126,28 +126,7 @@ with st.form("user_survey_form"):
         }
 
         try:
-            # 1. 获取数据库信息
-            db_info_response = requests.get(
-                f"https://api.notion.com/v1/databases/{database_id}",
-                headers=headers
-            )
-            
-            if db_info_response.status_code == 200:
-                db_info = db_info_response.json()
-                
-                # 安全地获取数据库标题 - 修复索引错误
-                title_objects = db_info.get("title", [])
-                db_title = "无标题数据库"
-                if title_objects:
-                    # 遍历所有标题对象
-                    for obj in title_objects:
-                        if "plain_text" in obj:
-                            db_title = obj["plain_text"]
-                            break
-                
-                st.info(f"✅ 成功连接到Notion数据库: {db_title}")
-                
-                # 2. 准备写入数据 - 修正属性类型和结构
+                # 1.准备写入数据 
                 notion_payload = {
                     "parent": {"database_id": database_id},
                     "properties": {
@@ -186,7 +165,7 @@ with st.form("user_survey_form"):
                     }
                 }
                 
-                # 3. 写入数据
+                # 2. 写入数据
                 create_response = requests.post(
                     "https://api.notion.com/v1/pages",
                     headers=headers,
@@ -196,28 +175,8 @@ with st.form("user_survey_form"):
                 if create_response.status_code == 200:
                     st.success("✅ 反馈已成功保存到Notion！")
                 else:
-                    st.error(f"❌ 数据写入失败 (状态码: {create_response.status_code})")
+                    st.error(f"❌ 提交失败: HTTP {response.status_code}")
                     
-                    # 显示详细错误信息
-                    try:
-                        error_json = create_response.json()
-                        st.json(error_json)
-                        
-                        # 提供具体错误分析
-                        if "message" in error_json:
-                            st.error(f"错误原因: {error_json['message']}")
-                            
-                    except:
-                        st.write(f"原始响应: {create_response.text}")
-            
-            else:
-                st.error(f"❌ 数据库连接失败 (状态码: {db_info_response.status_code})")
-                st.json(db_info_response.json())
-                
+                      
         except Exception as e:
-            st.error(f"❌ 连接Notion时出错: {str(e)}")
-            
-        # 调试信息
-        if 'db_info' in locals():
-            st.markdown("### 数据库属性详情（用于调试）")
-            st.json(db_info.get("properties", {}))
+            st.error(f"❌ 发生错误: {str(e)}")
