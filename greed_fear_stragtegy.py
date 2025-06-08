@@ -144,10 +144,19 @@ with st.form("user_survey_form"):
                 notion_payload = {
                     "parent": {"database_id": database_id},
                     "properties": {
+                       "标题": {
+                            "title": [
+                                {
+                                    "text": {
+                                        "content": f"反馈 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                                    }
+                                }
+                            ]
+                        },
                         "提交时间": {"date": {"start": datetime.now().isoformat()}},
                         "理解度": {"select": {"name": experience}},
                         "帮助程度": {"select": {"name": insight}},
-                        "建议功能": {"rich_text": [{"text": {"content": expected_feature}}]}
+                        "建议功能": {"text": [{"text": {"content": expected_feature or "无"}}]}
                     }
                 }
                 
