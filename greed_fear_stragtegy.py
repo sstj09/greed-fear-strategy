@@ -175,7 +175,7 @@ with st.form("user_survey_form"):
                         },
                         # 建议功能 - 使用小写 "rich_text" (Text类型在API中是rich_text)
                         "建议功能": {
-                            "text": [
+                            "rich_text": [
                                 {
                                     "text": {
                                         "content": expected_feature or "无建议"
