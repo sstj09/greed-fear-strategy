@@ -171,11 +171,6 @@ with st.form("user_survey_form"):
                     headers=headers,
                     json=notion_payload
                 )
-                
-                if create_response.status_code == 200:
-                    st.success("✅ 反馈已成功保存到Notion！")
-                else:
-                    st.error(f"❌ 提交失败: HTTP {response.status_code}")
                     
                       
         except Exception as e:
