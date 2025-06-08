@@ -118,7 +118,6 @@ with st.form("user_survey_form"):
 
         notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
         database_id = "2080ef86-7941-8085-b579-f617b26cac05"
-        #              2080ef86-7941-8085-b579-f617b26cac05
 
         headers = {
             "Authorization": f"Bearer {notion_token}",
@@ -126,32 +125,68 @@ with st.form("user_survey_form"):
             "Notion-Version": "2022-06-28"
         }
 
-        # 尝试获取数据库信息以验证连接
         try:
-            # 先测试获取数据库信息
+            # 1. 获取数据库信息
             db_info_response = requests.get(
                 f"https://api.notion.com/v1/databases/{database_id}",
                 headers=headers
             )
             
             if db_info_response.status_code == 200:
-                st.info("✅ 成功连接到Notion数据库！")
                 db_info = db_info_response.json()
-                db_title = db_info.get("title", [{}])[0].get("plain_text", "未知数据库")
-                st.info(f"数据库名称: {db_title}")
                 
-                # 现在尝试写入数据
+                # 安全地获取数据库标题 - 修复索引错误
+                title_objects = db_info.get("title", [])
+                db_title = "无标题数据库"
+                if title_objects:
+                    # 遍历所有标题对象
+                    for obj in title_objects:
+                        if "plain_text" in obj:
+                            db_title = obj["plain_text"]
+                            break
+                
+                st.info(f"✅ 成功连接到Notion数据库: {db_title}")
+                
+                # 2. 准备写入数据 - 修正属性类型和结构
                 notion_payload = {
                     "parent": {"database_id": database_id},
                     "properties": {
-                       "标题":  {"Title": [{"text": {"content": expected_feature or "无"}}]},
-                        "提交时间": {"Date": {"start": datetime.now().isoformat()}},
-                        "理解度": {"Select": {"name": experience}},
-                        "帮助程度": {"Select": {"name": insight}},
-                        "建议功能": {"Text": [{"text": {"content": expected_feature or "无"}}]}
+                        # 标题属性 - 使用正确的结构
+                        "标题": {
+                            "title": [
+                                {
+                                    "text": {
+                                        "content": f"用户反馈 - {datetime.now().strftime('%Y-%m-%d')}"
+                                    }
+                                }
+                            ]
+                        },
+                        # 提交时间 - 使用小写 "date"
+                        "提交时间": {
+                            "date": {"start": datetime.now().isoformat()}
+                        },
+                        # 理解度 - 使用小写 "select"
+                        "理解度": {
+                            "select": {"name": experience}
+                        },
+                        # 帮助程度 - 使用小写 "select"
+                        "帮助程度": {
+                            "select": {"name": insight}
+                        },
+                        # 建议功能 - 使用小写 "rich_text" (Text类型在API中是rich_text)
+                        "建议功能": {
+                            "text": [
+                                {
+                                    "text": {
+                                        "content": expected_feature or "无建议"
+                                    }
+                                }
+                            ]
+                        }
                     }
                 }
                 
+                # 3. 写入数据
                 create_response = requests.post(
                     "https://api.notion.com/v1/pages",
                     headers=headers,
@@ -162,36 +197,27 @@ with st.form("user_survey_form"):
                     st.success("✅ 反馈已成功保存到Notion！")
                 else:
                     st.error(f"❌ 数据写入失败 (状态码: {create_response.status_code})")
-                    st.json(create_response.json())
                     
-                    # 检查数据库属性是否匹配
-                    if create_response.status_code == 400:
-                        required_properties = ["提交时间", "理解度", "帮助程度", "建议功能"]
-                        db_properties = list(db_info.get("properties", {}).keys())
-                        st.error("数据库属性不匹配:")
-                        st.write(f"需要的属性: {required_properties}")
-                        st.write(f"数据库实际属性: {db_properties}")
+                    # 显示详细错误信息
+                    try:
+                        error_json = create_response.json()
+                        st.json(error_json)
+                        
+                        # 提供具体错误分析
+                        if "message" in error_json:
+                            st.error(f"错误原因: {error_json['message']}")
+                            
+                    except:
+                        st.write(f"原始响应: {create_response.text}")
             
-            elif db_info_response.status_code == 404:
-                st.error("❌ 数据库未找到，请检查:")
-                st.markdown("""
-                1. **数据库是否已共享给集成**:
-                   - 打开Notion数据库
-                   - 点击右上角"Share"
-                   - 选择"Invite"
-                   - 搜索并添加您的集成
-                2. **数据库ID是否正确**  
-                   - 当前使用的ID: `2080ef86-7941-8083-b27d-c87bafe18873`
-                3. **集成是否已添加到工作区**:
-                   - 访问 [Notion集成设置](https://www.notion.so/my-integrations)
-                   - 找到您的集成
-                   - 点击"Add to workspace"并选择正确的工作区
-                """)
-                st.json(db_info_response.json())
-                
             else:
                 st.error(f"❌ 数据库连接失败 (状态码: {db_info_response.status_code})")
                 st.json(db_info_response.json())
                 
         except Exception as e:
             st.error(f"❌ 连接Notion时出错: {str(e)}")
+            
+        # 调试信息
+        if 'db_info' in locals():
+            st.markdown("### 数据库属性详情（用于调试）")
+            st.json(db_info.get("properties", {}))
