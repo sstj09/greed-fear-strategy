@@ -116,13 +116,10 @@ with st.form("user_survey_form"):
     if submit:
         st.success("✅ 感谢您的反馈！")
 
-        # # ✅ 写入本地 CSV（可选）
-        # with open("user_feedback.csv", "a", encoding="utf-8") as f:
-        #     f.write(f"{datetime.now()},{experience},{insight},{expected_feature}\n")
-
         # ✅ 写入 Notion 数据库
         notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
-        database_id = "2080ef8679418083b27dc87bafe18873"
+        # 使用带连字符的正确数据库ID格式
+        database_id = "2080ef86-7941-8083-b27d-c87bafe18873"  # 使用带连字符的格式
 
         headers = {
             "Authorization": f"Bearer {notion_token}",
@@ -140,12 +137,37 @@ with st.form("user_survey_form"):
             }
         }
 
-        response = requests.post(
-            "https://api.notion.com/v1/pages",
-            headers=headers,
-            json=notion_payload
-        )
+        try:
+            response = requests.post(
+                "https://api.notion.com/v1/pages",
+                headers=headers,
+                json=notion_payload
+            )
 
-        if response.status_code != 200:
-            st.error("❌ Notion 写入失败，请检查 token 和数据库权限")
-            st.json(response.json())
+            if response.status_code == 200:
+                st.success("✅ 反馈已成功保存到Notion！")
+            else:
+                st.error(f"❌ Notion写入失败 (状态码: {response.status_code})")
+                st.json(response.json())
+                
+                # 添加详细的权限检查说明
+                if response.status_code == 404:
+                    st.markdown("""
+                    ### 请检查以下设置：
+                    1. **数据库ID是否正确**  
+                       - 当前使用的ID: `2080ef86-7941-8083-b27d-c87bafe18873`
+                    2. **是否已共享数据库给集成**  
+                       - 打开您的Notion数据库  
+                       - 点击右上角"Share"  
+                       - 选择"Invite"  
+                       - 搜索并添加您的集成
+                    3. **数据库属性是否匹配**  
+                       - 确保数据库中有以下属性:  
+                         - 提交时间 (日期)  
+                         - 理解度 (单选)  
+                         - 帮助程度 (单选)  
+                         - 建议功能 (富文本)
+                    """)
+                
+        except Exception as e:
+            st.error(f"❌ 连接Notion时出错: {str(e)}")
