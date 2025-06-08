@@ -116,10 +116,8 @@ with st.form("user_survey_form"):
     if submit:
         st.success("✅ 感谢您的反馈！")
 
-        # ✅ 写入 Notion 数据库
         notion_token = "ntn_T401856748914gT9Zu7PzfLJyPFFC0r0awF9pDiVWEV8SX"
-        # 使用带连字符的正确数据库ID格式
-        database_id = "2080ef86-7941-8083-b27d-c87bafe18873"  # 使用带连字符的格式
+        database_id = "2080ef86-7941-8083-b27d-c87bafe18873"
 
         headers = {
             "Authorization": f"Bearer {notion_token}",
@@ -127,47 +125,71 @@ with st.form("user_survey_form"):
             "Notion-Version": "2022-06-28"
         }
 
-        notion_payload = {
-            "parent": {"database_id": database_id},
-            "properties": {
-                "提交时间": {"date": {"start": datetime.now().isoformat()}},
-                "理解度": {"select": {"name": experience}},
-                "帮助程度": {"select": {"name": insight}},
-                "建议功能": {"rich_text": [{"text": {"content": expected_feature}}]}
-            }
-        }
-
+        # 尝试获取数据库信息以验证连接
         try:
-            response = requests.post(
-                "https://api.notion.com/v1/pages",
-                headers=headers,
-                json=notion_payload
+            # 先测试获取数据库信息
+            db_info_response = requests.get(
+                f"https://api.notion.com/v1/databases/{database_id}",
+                headers=headers
             )
-
-            if response.status_code == 200:
-                st.success("✅ 反馈已成功保存到Notion！")
-            else:
-                st.error(f"❌ Notion写入失败 (状态码: {response.status_code})")
-                st.json(response.json())
+            
+            if db_info_response.status_code == 200:
+                st.info("✅ 成功连接到Notion数据库！")
+                db_info = db_info_response.json()
+                db_title = db_info.get("title", [{}])[0].get("plain_text", "未知数据库")
+                st.info(f"数据库名称: {db_title}")
                 
-                # 添加详细的权限检查说明
-                if response.status_code == 404:
-                    st.markdown("""
-                    ### 请检查以下设置：
-                    1. **数据库ID是否正确**  
-                       - 当前使用的ID: `2080ef86-7941-8083-b27d-c87bafe18873`
-                    2. **是否已共享数据库给集成**  
-                       - 打开您的Notion数据库  
-                       - 点击右上角"Share"  
-                       - 选择"Invite"  
-                       - 搜索并添加您的集成
-                    3. **数据库属性是否匹配**  
-                       - 确保数据库中有以下属性:  
-                         - 提交时间 (日期)  
-                         - 理解度 (单选)  
-                         - 帮助程度 (单选)  
-                         - 建议功能 (富文本)
-                    """)
+                # 现在尝试写入数据
+                notion_payload = {
+                    "parent": {"database_id": database_id},
+                    "properties": {
+                        "提交时间": {"date": {"start": datetime.now().isoformat()}},
+                        "理解度": {"select": {"name": experience}},
+                        "帮助程度": {"select": {"name": insight}},
+                        "建议功能": {"rich_text": [{"text": {"content": expected_feature}}]}
+                    }
+                }
+                
+                create_response = requests.post(
+                    "https://api.notion.com/v1/pages",
+                    headers=headers,
+                    json=notion_payload
+                )
+                
+                if create_response.status_code == 200:
+                    st.success("✅ 反馈已成功保存到Notion！")
+                else:
+                    st.error(f"❌ 数据写入失败 (状态码: {create_response.status_code})")
+                    st.json(create_response.json())
+                    
+                    # 检查数据库属性是否匹配
+                    if create_response.status_code == 400:
+                        required_properties = ["提交时间", "理解度", "帮助程度", "建议功能"]
+                        db_properties = list(db_info.get("properties", {}).keys())
+                        st.error("数据库属性不匹配:")
+                        st.write(f"需要的属性: {required_properties}")
+                        st.write(f"数据库实际属性: {db_properties}")
+            
+            elif db_info_response.status_code == 404:
+                st.error("❌ 数据库未找到，请检查:")
+                st.markdown("""
+                1. **数据库是否已共享给集成**:
+                   - 打开Notion数据库
+                   - 点击右上角"Share"
+                   - 选择"Invite"
+                   - 搜索并添加您的集成
+                2. **数据库ID是否正确**  
+                   - 当前使用的ID: `2080ef86-7941-8083-b27d-c87bafe18873`
+                3. **集成是否已添加到工作区**:
+                   - 访问 [Notion集成设置](https://www.notion.so/my-integrations)
+                   - 找到您的集成
+                   - 点击"Add to workspace"并选择正确的工作区
+                """)
+                st.json(db_info_response.json())
+                
+            else:
+                st.error(f"❌ 数据库连接失败 (状态码: {db_info_response.status_code})")
+                st.json(db_info_response.json())
                 
         except Exception as e:
             st.error(f"❌ 连接Notion时出错: {str(e)}")
